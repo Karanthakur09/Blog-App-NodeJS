@@ -11,7 +11,6 @@ const userSchema = new Schema({
     },
     salt: {
         type: String,
-        required: true
     },
     password: {
         type: String,
@@ -28,6 +27,22 @@ const userSchema = new Schema({
     }
 }, { timestamps: true });
 
+userSchema.static("matchPassword",async function (email,password){
+    const user=await this.findOne({email});
+    if(!user) throw new Error('User not found!');
+
+    const salt=user.salt;
+    const hashedPassword=user.password;
+
+    const userProvideHash = createHmac("sha256", salt)
+        .update(password)
+        .digest("hex");
+
+    if(hashedPassword !==userProvideHash) throw new Error('Incorrect password!');
+
+    return user;
+})
+
 userSchema.pre("save", function (next) {
     const user = this;
     if (!user.isModified("password")) return; //if user password is same then return
@@ -38,7 +53,7 @@ userSchema.pre("save", function (next) {
         .digest("hex");
         
         this.salt=salt;
-        this.password=this.hashedPassword;
+        this.password=hashedPassword;//hashed pass couldn't be converted back to normal pass, we need to compare always hashes using salt
         
     next();
 })
