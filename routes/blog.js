@@ -2,6 +2,7 @@ import { Router } from "express"
 import multer from "multer";
 import path from 'path';
 import Blog from '../models/blog.js'
+import { blogCommentHandler, blogDetail, fileUpload } from "../controllers/blog.js";
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -23,17 +24,10 @@ router.get('/add-new',(req,res)=>{
      })
 })
 
-router.post('/',upload.single('coverImage'),async (req,res)=>{
-    const {title,body}=req.body;
+router.post('/',upload.single('coverImage'),fileUpload)
 
-     const blog=await Blog.create({
-        body,
-        title,
-        createdBy:req.user._id,
-        coverImageURL:`/uploads/${req.file.filename}`
-     })
-     res.redirect(`/blog/${blog._id}`);
+router.get('/:id',blogDetail);
 
-})
+router.post('/comment/:blogId',blogCommentHandler);
 
 export default router;
